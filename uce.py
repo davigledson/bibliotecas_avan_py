@@ -82,10 +82,11 @@ n3 = float(input("Digite a nota 3:"))
 media = (n1+n2+n3) /3
 print(f"Sua media é de {media:.2f}")
 
-if media > 7:
+if media >= 7:
     print("Aprovado")
-elif media <= 7 and media >=4:
+elif media < 7 and media >=4:
     print("Recuperação")
 else:
     print("Reprovado")
+
 
