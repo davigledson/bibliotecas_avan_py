@@ -6,5 +6,5 @@ bot.PAUSE = 1
 
 bot.click('icones/brave.png')
 
-bot.click('sigaa.png')
+bot.click('icones/sigaa.png')
 

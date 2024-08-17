@@ -55,7 +55,6 @@ print("a < b ->", a < b)  # True, porque 10 é menor que 20
 
 a = 20
 b = 20
-
 if a < b: 
     print("a é menor que b")
 elif a == b:
@@ -80,7 +79,7 @@ n1 = float(input("Digite a nota 1:"))
 n2 = float(input("Digite a nota 2:"))
 n3 = float(input("Digite a nota 3:"))
 media = (n1+n2+n3) /3
-print(f"Sua media é de {media:.2f}")
+print(f"Sua media é de {media}")
 
 if media >= 7:
     print("Aprovado")
@@ -89,4 +88,11 @@ elif media < 7 and media >=4:
 else:
     print("Reprovado")
 
+
+print("Mini curso de introdução ao python")
+o_que_vai_ter = [
+    "Aprenda sobre Sintaxe","operadores",
+         "Comandos", "Bibliotecas","E mais"]
+qual_data = 'Entre 8 e 9 de julho'
+onde = {"Vamos decidir ainda"}
 
