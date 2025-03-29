@@ -1,145 +1,102 @@
 import numpy as np
 import cv2
 import os
-import time
-from matplotlib import pyplot as plt
-from skimage.metrics import structural_similarity as ssim
+import matplotlib.pyplot as plt
 
 
-def print_stats(image, title):
-    """Exibe estatísticas da imagem"""
-    print(f"\n{title}:")
-    print(f"- Dimensões: {image.shape}")
-    print(f"- Tamanho na memória: {image.nbytes / 1024:.2f} KB")
-    print(f"- Valor mínimo: {np.min(image):.4f}, máximo: {np.max(image):.4f}")
-    print(f"- Média: {np.mean(image):.4f}, Desvio padrão: {np.std(image):.4f}")
+def pca_compress(image_path, k_components=30, output_dir='output'):
+    """Compressão de imagem com PCA e salvamento dos resultados"""
 
+    # Criar diretório de saída
+    os.makedirs(output_dir, exist_ok=True)
 
-def pca_compress(image_path, k_components=50):
-    """Pipeline completo de compressão por PCA com métricas"""
-
-    # Inicia contagem de tempo total
-    start_time = time.time()
-
-    # Passo 1: Carregamento e pré-processamento
-    load_time = time.time()
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-    if image is None:
+    # 1. Carregar a imagem
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if img is None:
         raise FileNotFoundError(f"Imagem não encontrada em {image_path}")
 
-    original_size = os.path.getsize(image_path) / 1024  # KB
-    original_shape = image.shape
+    original_size = os.path.getsize(image_path)
+    img_float = img.astype(np.float32) / 255.0  # Normalizar para [0,1]
 
-    # Normaliza para [0, 1]
-    image = image.astype(np.float32) / 255.0
-    load_time = time.time() - load_time
-
-    print_stats(image, "IMAGEM ORIGINAL")
-    print(f"- Tamanho do arquivo: {original_size:.2f} KB")
-    print(f"- Tempo de carregamento: {load_time:.4f} segundos")
-
-    # Passo 2: Cálculo da matriz de covariância
-    cov_time = time.time()
-    mean = np.mean(image, axis=0)
-    centered_image = image - mean
-    cov_matrix = np.cov(centered_image, rowvar=False)
-    cov_time = time.time() - cov_time
-
-    print(f"\nMatriz de covariância calculada em {cov_time:.4f} segundos")
-    print(f"- Dimensões da matriz: {cov_matrix.shape}")
-
-    # Passo 3: Decomposição em autovalores/autovetores
-    eigen_time = time.time()
-    eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
-
-    # Converter para números reais (ignorando parte imaginária se existir)
-    eigenvalues = np.real(eigenvalues)
-    eigenvectors = np.real(eigenvectors)
-
-    sorted_idx = np.argsort(eigenvalues)[::-1]
-    eigenvalues = eigenvalues[sorted_idx]
-    eigenvectors = eigenvectors[:, sorted_idx]
-    eigen_time = time.time() - eigen_time
-
-    print(f"\nDecomposição eigen concluída em {eigen_time:.4f} segundos")
-    print(f"- Autovalor máximo: {eigenvalues[0]:.2f}, mínimo: {eigenvalues[-1]:.2f}")
-
-    # Passo 4: Seleção de componentes principais
-    select_time = time.time()
+    # 2. Calcular PCA
+    mean = np.mean(img_float, axis=0)
+    centered = img_float - mean
+    cov = np.cov(centered, rowvar=False)
+    eigenvalues, eigenvectors = np.linalg.eig(cov)
+    eigenvectors = np.real(eigenvectors[:, np.argsort(-np.real(eigenvalues))])
     components = eigenvectors[:, :k_components]
+    scores = np.dot(centered, components)
 
-    # Calcula variância explicada
-    explained_variance = np.sum(eigenvalues[:k_components]) / np.sum(eigenvalues)
-    select_time = time.time() - select_time
+    # 3. Salvar dados comprimidos
+    compressed_path = os.path.join(output_dir, 'compressed_data.npz')
+    np.savez_compressed(
+        compressed_path,
+        mean=mean.astype(np.float32),
+        components=components.astype(np.float32),
+        scores=scores.astype(np.float32),
+        original_shape=img.shape
+    )
+    compressed_size = os.path.getsize(compressed_path)
 
-    print(f"\nSelecionados {k_components} componentes em {select_time:.4f} segundos")
-    print(f"- Variância explicada: {explained_variance * 100:.2f}%")
-
-    # Passo 5: Reconstrução da imagem
-    recon_time = time.time()
-    projected = np.dot(centered_image, components)
-    reconstructed = np.dot(projected, components.T) + mean
+    # 4. Reconstruir imagem
+    reconstructed = np.dot(scores, components.T) + mean
     reconstructed = np.clip(reconstructed, 0, 1)
-    recon_time = time.time() - recon_time
+    reconstructed_img = (reconstructed * 255).astype(np.uint8)
 
-    # Garante que a imagem reconstruída é real
-    reconstructed = np.real(reconstructed)
+    # 5. Salvar imagens para comparação
+    reconstructed_path = os.path.join(output_dir, 'reconstructed.jpg')
+    cv2.imwrite(reconstructed_path, reconstructed_img)
 
-    # Calcula tamanho teórico comprimido (em KB)
-    compressed_size = (components.size + projected.size) * 4 / 1024  # float32 = 4 bytes
+    original_path = os.path.join(output_dir, 'original.jpg')
+    cv2.imwrite(original_path, img)
 
-    print_stats(reconstructed, "IMAGEM COMPRIMIDA")
-    print(f"- Tamanho teórico comprimido: {compressed_size:.2f} KB")
-    print(f"- Razão de compressão: {original_size / compressed_size:.2f}x")
-    print(f"- Tempo de reconstrução: {recon_time:.4f} segundos")
+    # 6. Mostrar resultados
+    print(f"\n{' RESULTADOS ':=^40}")
+    print(f"Original: {original_size / 1024:.1f} KB")
+    print(f"Comprimido: {compressed_size / 1024:.1f} KB")
+    print(f"Taxa de compressão: {original_size / compressed_size:.1f}x")
 
-    # Cálculo de métricas de qualidade
-    quality_time = time.time()
-    mse = np.mean((image - reconstructed) ** 2)
-    psnr = 10 * np.log10(1.0 / mse) if mse != 0 else float('inf')
-    ssim_val = ssim(image, reconstructed, data_range=1.0)
-    quality_time = time.time() - quality_time
-
-    print(f"\nMÉTRICAS DE QUALIDADE (calculadas em {quality_time:.4f} segundos):")
-    print(f"- MSE: {mse:.6f}")
-    print(f"- PSNR: {psnr:.2f} dB")
-    print(f"- SSIM: {ssim_val:.4f}")
-
-    # Visualização
-    plt.figure(figsize=(12, 6))
+    # 7. Plotar comparação
+    plt.figure(figsize=(12, 4))
 
     plt.subplot(1, 3, 1)
-    plt.imshow(image, cmap='gray')
-    plt.title(f'Original\n{original_shape} | {original_size:.2f} KB')
+    plt.imshow(img, cmap='gray')
+    plt.title('Original')
+    plt.axis('off')
 
     plt.subplot(1, 3, 2)
     plt.imshow(reconstructed, cmap='gray')
-    plt.title(f'Comprimida (k={k_components})\n{compressed_size:.2f} KB | {explained_variance * 100:.1f}% var.')
+    plt.title(f'Comprimida (k={k_components})')
+    plt.axis('off')
 
     plt.subplot(1, 3, 3)
-    plt.plot(np.cumsum(eigenvalues) / np.sum(eigenvalues))
+    explained_variance = np.cumsum(np.real(eigenvalues)) / np.sum(np.real(eigenvalues))
+    plt.plot(explained_variance)
     plt.axvline(k_components, color='r', linestyle='--')
-    plt.title('Variância Explicada Cumulativa')
-    plt.xlabel('Nº Componentes')
-    plt.ylabel('Variância Explicada')
+    plt.title('Variância Explicada')
+    plt.xlabel('Componentes Principais')
 
     plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'comparison.png'))
     plt.show()
 
-    total_time = time.time() - start_time
-    print(f"\nPROCESSO CONCLUÍDO EM {total_time:.2f} SEGUNDOS")
+    return {
+        'original': original_path,
+        'compressed': compressed_path,
+        'reconstructed': reconstructed_path
+    }
 
-    return reconstructed
 
-
-# Execução principal
+# Exemplo de uso
 if __name__ == "__main__":
-    # Configurações
-    IMAGE_PATH = 'imgs/kelry.jpeg'  # Substitua pelo seu caminho
-    K_COMPONENTS = 100  # Componentes principais
+    # Configurações (ajuste conforme necessário)
+    input_image = 'imgs/img_P.jpg'
+    components = 50  # Número de componentes principais
 
-    # Executa a compressão
-    compressed_image = pca_compress(IMAGE_PATH, K_COMPONENTS)
+    # Executar compressão
+    results = pca_compress(input_image, k_components=components)
 
-    # Salva a imagem reconstruída
-    cv2.imwrite('imgs_comp/compressed_PCA.jpg', (compressed_image * 255).astype(np.uint8))
+    print("\nArquivos salvos em:")
+    print(f"- Original: {results['original']}")
+    print(f"- Dados comprimidos: {results['compressed']}")
+    print(f"- Reconstruída: {results['reconstructed']}")

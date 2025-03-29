@@ -184,14 +184,14 @@ def dct_compress(image_path, quality=50, block_size=8, show_stats=True):
 # Exemplo de uso
 if __name__ == "__main__":
     # Configurações
-    IMAGE_PATH = 'imgs/kelry.jpeg'  # Substitua pelo caminho da sua imagem
+    IMAGE_PATH = 'imgs/kelry.jpeg'  # caminho da sua imagem
     QUALITY = 10  # Qualidade desejada (1-100)
 
     # Executar compressão
     results = dct_compress(IMAGE_PATH, quality=QUALITY)
 
     # Salvar imagem comprimida
-    cv2.imwrite('imgs_comp/compressed_dct.jpg', results['compressed_image'])
+    cv2.imwrite('output/compressed_dct.jpg', results['compressed_image'])
     print("\nRESUMO FINAL:")
     print(f"- Qualidade configurada: {results['quality']}")
     print(f"- PSNR: {results['psnr']:.2f} dB (maior é melhor)")
