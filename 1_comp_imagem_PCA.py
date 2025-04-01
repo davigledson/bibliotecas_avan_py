@@ -1,3 +1,14 @@
+"""
+numpy: Para operações matemáticas e manipulação de arrays
+
+cv2 (OpenCV): Para processamento de imagens
+
+os: Para operações com sistema de arquivos
+
+matplotlib.pyplot: Para visualização dos resultados
+
+"""
+
 import numpy as np
 import cv2
 import os
@@ -11,21 +22,36 @@ def pca_compress(image_path, k_components=30, output_dir='output'):
     os.makedirs(output_dir, exist_ok=True)
 
     # 1. Carregar a imagem
+    #
+    """
+    IMREAD_GRAYSCALE converte a imagem para um único canal (intensidade de brilho), eliminando cores.
+
+    O PCA trabalha com matrizes 2D, e imagens coloridas (RGB) teriam 3 canais (R, G, B), exigindo tratamento mais complexo.
+
+    Compressão mais eficiente, já que escala de cinza reduz a dimensionalidade (1 canal vs. 3 do RGB).
+    """
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
         raise FileNotFoundError(f"Imagem não encontrada em {image_path}")
 
     original_size = os.path.getsize(image_path)
-    img_float = img.astype(np.float32) / 255.0  # Normalizar para [0,1]
+    img_float = img.astype(np.float32) / 255.0  # Converte a imagem para float32 e normaliza os pixels para [0, 1]
 
-    # 2. Calcular PCA
-    mean = np.mean(img_float, axis=0)
-    centered = img_float - mean
-    cov = np.cov(centered, rowvar=False)
-    eigenvalues, eigenvectors = np.linalg.eig(cov)
-    eigenvectors = np.real(eigenvectors[:, np.argsort(-np.real(eigenvalues))])
-    components = eigenvectors[:, :k_components]
-    scores = np.dot(centered, components)
+    # 2. Calcular PCA (Análise de componente principal(PCA) )
+
+    mean = np.mean(img_float, axis=0)  # Calcula a média de intensidade para cada coluna de pixels na imagem
+
+    centered = img_float - mean  # Centraliza os dados subtraindo a média de cada coluna (preparação para PCA)
+
+    cov = np.cov(centered,rowvar=False)  # Calcula matriz de covariância entre colunas (mostra como pixels variam conjuntamente)
+
+    eigenvalues, eigenvectors = np.linalg.eig(cov)  # Obtém autovalores (importância) e autovetores (direções principais) da covariância
+
+    eigenvectors = np.real(eigenvectors[:, np.argsort(-np.real(eigenvalues))])  # Ordena autovetores do mais para o menos importante
+
+    components = eigenvectors[:,:k_components]  # Seleciona apenas os k autovetores mais significativos (componentes principais)
+
+    scores = np.dot(centered,components)  # Transforma os dados originais para o novo espaço dimensional reduzido (projeção PCA)
 
     # 3. Salvar dados comprimidos
     compressed_path = os.path.join(output_dir, 'compressed_data.npz')
@@ -44,7 +70,7 @@ def pca_compress(image_path, k_components=30, output_dir='output'):
     reconstructed_img = (reconstructed * 255).astype(np.uint8)
 
     # 5. Salvar imagens para comparação
-    reconstructed_path = os.path.join(output_dir, 'reconstructed.jpg')
+    reconstructed_path = os.path.join(output_dir, 'reconstructed_PCA.jpg')
     cv2.imwrite(reconstructed_path, reconstructed_img)
 
     original_path = os.path.join(output_dir, 'original.jpg')
@@ -89,9 +115,9 @@ def pca_compress(image_path, k_components=30, output_dir='output'):
 
 # Exemplo de uso
 if __name__ == "__main__":
-    # Configurações (ajuste conforme necessário)
+    # Configurações
     input_image = 'imgs/img_P.jpg'
-    components = 50  # Número de componentes principais
+    components = 100  # Número de componentes principais
 
     # Executar compressão
     results = pca_compress(input_image, k_components=components)

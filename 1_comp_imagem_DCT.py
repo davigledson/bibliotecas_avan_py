@@ -181,7 +181,7 @@ def dct_compress(image_path, quality=50, block_size=8, show_stats=True):
     }
 
 
-# Exemplo de uso
+
 if __name__ == "__main__":
     # Configurações
     IMAGE_PATH = 'imgs/kelry.jpeg'  # caminho da sua imagem
