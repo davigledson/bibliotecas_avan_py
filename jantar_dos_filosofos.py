@@ -14,7 +14,7 @@ semaforos = [threading.Semaphore(0) for _ in range(N)]
 mutex = threading.Lock()
 refeicoes = [0] * N
 
-nomes = ["Sócrates", "Platão", "Aristóteles", "Descartes", "Nietzsche"]
+nomes = ["Sócrates", "Platão", "Aristóteles", "Descartes", "Maquiavel"]
 
 class JantarDosFilosofos:
     def __init__(self, root):
@@ -119,7 +119,7 @@ class JantarDosFilosofos:
         )
         tk.Label(solucao, text=msg, justify="left", font=("Arial", 10), padx=10, pady=10, anchor="nw").pack(fill="both", expand=True)
 
-# ✅ Execução principal
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = JantarDosFilosofos(root)
