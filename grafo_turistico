@@ -1,0 +1,46 @@
+digraph {
+	Natal
+	"João Pessoa"
+	Recife
+	"Maceió"
+	Aracaju
+	Salvador
+	"Feira de Santana"
+	Petrolina
+	Teresina
+	"Parnaíba"
+	Fortaleza
+	Sobral
+	"São Luís"
+	Caxias
+	Palmas
+	Barreiras
+	"Brasília"
+	"Goiânia"
+	"Belo Horizonte"
+	"Vitória da Conquista"
+	"Ilhéus"
+	"Serra da Capivara"
+	Natal -> "João Pessoa" [label="180 km" color=red penwidth=3]
+	Natal -> Fortaleza [label="530 km" color=gray]
+	"João Pessoa" -> Recife [label="120 km" color=red penwidth=3]
+	Recife -> "Maceió" [label="260 km" color=red penwidth=3]
+	"Maceió" -> Aracaju [label="280 km" color=red penwidth=3]
+	Aracaju -> Salvador [label="350 km" color=red penwidth=3]
+	Salvador -> "Feira de Santana" [label="120 km" color=red penwidth=3]
+	Salvador -> "Ilhéus" [label="310 km" color=gray]
+	"Feira de Santana" -> Petrolina [label="500 km" color=red penwidth=3]
+	Petrolina -> "Serra da Capivara" [label="300 km" color=red penwidth=3]
+	Teresina -> "Serra da Capivara" [label="530 km" color=gray]
+	Teresina -> "Parnaíba" [label="340 km" color=gray]
+	"Parnaíba" -> Sobral [label="360 km" color=gray]
+	Sobral -> Fortaleza [label="230 km" color=gray]
+	"São Luís" -> Caxias [label="360 km" color=gray]
+	Caxias -> Teresina [label="70 km" color=gray]
+	Palmas -> "Brasília" [label="970 km" color=gray]
+	Barreiras -> "Brasília" [label="600 km" color=gray]
+	"Brasília" -> "Goiânia" [label="210 km" color=gray]
+	"Goiânia" -> "Belo Horizonte" [label="840 km" color=gray]
+	"Belo Horizonte" -> "Vitória da Conquista" [label="670 km" color=gray]
+	"Vitória da Conquista" -> "Ilhéus" [label="200 km" color=gray]
+}
